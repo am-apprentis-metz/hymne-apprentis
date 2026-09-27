@@ -1,574 +1,350 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Hymne des Apprentis</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hymne des Apprentis — Accès</title>
 <style>
-    * {
-        box-sizing: border-box;
-    }
-
-    body {
-        margin: 0;
-        min-height: 100vh;
-        background:
-            radial-gradient(circle at center, #ead7ad 0%, #c9a66b 100%);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: Georgia, serif;
-        color: #3d2418;
-    }
-
-    .page {
-        width: min(92vw, 900px);
-        min-height: 90vh;
-        margin: 20px;
-        padding: 35px 25px;
-        background:
-            linear-gradient(rgba(245,226,180,.94), rgba(224,195,137,.94));
-        border: 10px solid #641d29;
-        box-shadow:
-            0 0 0 3px #c49a48,
-            0 10px 30px rgba(0,0,0,.35);
-        text-align: center;
-        position: relative;
-    }
-
-    h1 {
-        margin: 5px 0 25px;
-        font-size: clamp(28px, 6vw, 52px);
-        color: #641d29;
-        font-family: Georgia, serif;
-        letter-spacing: 1px;
-    }
-
-    .instruction {
-        font-size: clamp(20px, 4vw, 30px);
-        font-weight: bold;
-        margin: 20px 0 18px;
-    }
-
-    .subtitle {
-        font-size: 15px;
-        opacity: .7;
-        margin-bottom: 15px;
-    }
-
-    canvas {
-        display: block;
-        width: min(100%, 600px);
-        height: 360px;
-        margin: 0 auto;
-        background: rgba(255,248,224,.65);
-        border: 3px solid #641d29;
-        border-radius: 10px;
-        touch-action: none;
-        cursor: crosshair;
-    }
-
-    .buttons {
-        margin-top: 15px;
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    button {
-        border: none;
-        padding: 12px 20px;
-        border-radius: 8px;
-        background: #641d29;
-        color: white;
-        font-size: 16px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        opacity: .9;
-    }
-
-    #message {
-        min-height: 35px;
-        margin-top: 18px;
-        font-weight: bold;
-        font-size: 20px;
-    }
-
-    #hymne {
-        display: none;
-        margin-top: 30px;
-    }
-
-    #hymne img {
-        max-width: 100%;
-        height: auto;
-        border: 4px solid #641d29;
-        box-shadow: 0 5px 20px rgba(0,0,0,.25);
-    }
-
-    .success {
-        color: #641d29;
-        font-size: 28px;
-        font-weight: bold;
-    }
+:root{
+  --paper:#ead4a5; --paper2:#f3e2bd; --ink:#2b1b10;
+  --gold:#b98a35; --burgundy:#4b1111; --line:#8b6328;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#3a0909;color:var(--ink);font-family:Georgia,serif}
+body{
+  background:
+    radial-gradient(circle at 50% 20%,rgba(255,235,185,.12),transparent 42%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,.015) 0 2px,transparent 2px 7px),
+    var(--burgundy);
+}
+.page{min-height:100vh;padding:22px 12px;display:flex;align-items:center;justify-content:center}
+.card{
+  width:min(720px,100%); min-height:calc(100vh - 44px);
+  padding:34px 24px 28px; position:relative; overflow:hidden;
+  background:
+    radial-gradient(circle at 20% 10%,rgba(255,255,255,.35),transparent 35%),
+    repeating-linear-gradient(0deg,rgba(105,70,20,.025) 0 1px,transparent 1px 4px),
+    var(--paper);
+  border:3px solid var(--gold);
+  box-shadow:0 0 0 6px #6f3f18, inset 0 0 45px rgba(90,45,10,.18), 0 18px 55px #180303;
+}
+.card:before{content:"";position:absolute;inset:10px;border:1px solid #9a6b28;pointer-events:none}
+h1{
+  margin:20px 0 8px;text-align:center;font-size:clamp(32px,7vw,58px);
+  letter-spacing:.02em;font-weight:900;
+}
+.ornament{width:170px;margin:0 auto 28px;display:flex;align-items:center;gap:8px}
+.ornament:before,.ornament:after{content:"";height:1px;background:#79501f;flex:1}
+.ornament span{font-size:24px}
+.instruction{text-align:center;font-size:clamp(19px,4.5vw,27px);line-height:1.45;margin:0 auto 20px;max-width:600px}
+.small{text-align:center;opacity:.72;font-size:14px;margin:0 auto 14px}
+.canvas-wrap{max-width:520px;margin:0 auto;position:relative}
+canvas{
+  width:100%;aspect-ratio:1.55;display:block;touch-action:none;
+  background:rgba(255,245,214,.36);border:2px solid #98703a;
+  box-shadow:inset 0 0 25px rgba(80,45,10,.10);
+}
+.buttons{display:flex;justify-content:center;gap:10px;margin:14px 0 4px}
+button{
+  border:1px solid #79501f;background:#ead09b;color:#2b1b10;
+  padding:10px 18px;font:600 16px Georgia,serif;cursor:pointer;
+}
+button:active{transform:translateY(1px)}
+.status{text-align:center;min-height:34px;font-size:19px;margin-top:12px}
+.success{color:#4d3514;font-weight:700}
+.fail{color:#6c1812}
+#reveal{display:none;opacity:0}
+#reveal.show{display:block;animation:reveal .9s ease forwards}
+.sigma{font-size:70px;text-align:center;margin:12px 0 2px}
+.recognized{text-align:center;font-size:clamp(26px,7vw,42px);letter-spacing:.09em;font-weight:900}
+.hymne{display:block;width:100%;height:auto;margin:18px auto 0;border:1px solid #8b6328;box-shadow:0 8px 28px rgba(50,20,0,.25)}
+@keyframes reveal{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@media(max-width:480px){.page{padding:12px 8px}.card{min-height:calc(100vh - 24px);padding:28px 14px 22px}.card:before{inset:7px}.instruction{font-size:20px}}
 </style>
 </head>
-
 <body>
-
 <div class="page">
-
+<main class="card">
+  <section id="gate">
     <h1>Hymne des Apprentis</h1>
+    <div class="ornament"><span>✦</span></div>
+    <p class="instruction">Pour accéder à l'Hymne, dessinez le symbole des Apprentis</p>
+    <p class="small">À toi de jouer, camarade.</p>
+    <div class="canvas-wrap"><canvas id="pad"></canvas></div>
+    <div class="buttons"><button id="clear">Effacer</button><button id="check">Valider le symbole</button></div>
+    <div id="status" class="status"></div>
+  </section>
 
-    <div class="instruction">
-        À toi de jouer, camarade
-    </div>
-
-    <div class="subtitle">
-        <!-- Aucun indice sur le symbole -->
-    </div>
-
-    <canvas id="canvas"></canvas>
-
-    <div class="buttons">
-        <button id="clear">Effacer</button>
-        <button id="validate">Valider</button>
-    </div>
-
-    <div id="message"></div>
-
-    <div id="hymne">
-        <div class="success">SIGMA RECONNU</div>
-        <br>
-        <img src="hymne-des-apprentis.png" alt="Hymne des Apprentis">
-    </div>
-
+  <section id="reveal">
+    <div class="sigma">Σ</div>
+    <div class="recognized">SIGMA RECONNU</div>
+    <img class="hymne" src="hymne-des-apprentis.png" alt="Hymne des Apprentis">
+  </section>
+</main>
 </div>
 
 <script>
-
-/* =========================================================
-   CANVAS
-   ========================================================= */
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-let drawing = false;
-let points = [];
-
-function resizeCanvas() {
-
-    const rect = canvas.getBoundingClientRect();
-
-    const ratio = window.devicePixelRatio || 1;
-
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
-
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-    ctx.lineWidth = 6;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#641d29";
+const canvas=document.getElementById('pad'), ctx=canvas.getContext('2d');
+let dpr=1, drawing=false, strokes=[], current=[];
+function resize(){
+  const r=canvas.getBoundingClientRect(); dpr=Math.max(1,devicePixelRatio||1);
+  canvas.width=Math.round(r.width*dpr); canvas.height=Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='#2b1b10';
+  redraw();
 }
-
-resizeCanvas();
-
-window.addEventListener("resize", resizeCanvas);
-
-
-/* =========================================================
-   DESSIN
-   ========================================================= */
-
-function getPosition(e) {
-
-    const rect = canvas.getBoundingClientRect();
-
-    return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
+function pt(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+function redraw(){
+  const r=canvas.getBoundingClientRect();ctx.clearRect(0,0,r.width,r.height);
+  ctx.strokeStyle='#2b1b10';ctx.lineWidth=5;
+  for(const s of strokes.concat(current.length?[current]:[])){if(s.length<2)continue;ctx.beginPath();ctx.moveTo(s[0].x,s[0].y);for(let i=1;i<s.length;i++)ctx.lineTo(s[i].x,s[i].y);ctx.stroke()}
 }
+canvas.addEventListener('pointerdown',e=>{e.preventDefault();drawing=true;current=[pt(e)];canvas.setPointerCapture(e.pointerId);redraw()});
+canvas.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();current.push(pt(e));redraw()});
+function end(){if(!drawing)return;drawing=false;if(current.length>2)strokes.push(current);current=[];redraw()}
+canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
+document.getElementById('clear').onclick=()=>{strokes=[];current=[];document.getElementById('status').textContent='';redraw()};
 
-canvas.addEventListener("pointerdown", function(e) {
+// Recognition: geometric test for a hand-drawn uppercase Sigma.
+// Tolerance volontairement assez large pour accepter un dessin au doigt.
+function recognizeSigma(){
 
-    drawing = true;
+  const all=strokes.flat();
 
-    points = [];
+  // Accepte des dessins assez courts / imparfaits
+  if(all.length<12)return false;
 
-    const p = getPosition(e);
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
 
-    points.push(p);
+  for(const p of all){
+    minX=Math.min(minX,p.x);
+    minY=Math.min(minY,p.y);
+    maxX=Math.max(maxX,p.x);
+    maxY=Math.max(maxY,p.y);
+  }
 
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
+  const w=maxX-minX;
+  const h=maxY-minY;
 
-    canvas.setPointerCapture(e.pointerId);
-});
+  // Taille minimale beaucoup plus permissive
+  if(w<30||h<30)return false;
 
+  const aspect=w/h;
 
-canvas.addEventListener("pointermove", function(e) {
-
-    if (!drawing) return;
-
-    const p = getPosition(e);
-
-    points.push(p);
-
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-});
-
-
-canvas.addEventListener("pointerup", function() {
-
-    drawing = false;
-    ctx.closePath();
-});
-
-
-canvas.addEventListener("pointercancel", function() {
-
-    drawing = false;
-});
+  // Ancien : 0.55 à 2.7
+  // Nouveau : accepte des Sigma plus larges ou plus étroits
+  if(aspect<0.40||aspect>3.5)return false;
 
 
-/* =========================================================
-   EFFACER
-   ========================================================= */
+  // Convert to a 28x36 binary drawing
+  const W=28,H=36;
+  const grid=new Float32Array(W*H);
 
-document.getElementById("clear").addEventListener("click", function() {
+  for(const p of all){
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+    const x=Math.round((p.x-minX)/w*(W-1));
+    const y=Math.round((p.y-minY)/h*(H-1));
 
-    points = [];
+    // Zone de tolérance plus large autour du trait
+    for(let yy=-2;yy<=2;yy++){
+      for(let xx=-2;xx<=2;xx++){
 
-    document.getElementById("message").textContent = "";
+        const X=x+xx;
+        const Y=y+yy;
 
-    document.getElementById("hymne").style.display = "none";
-});
-
-
-/* =========================================================
-   OUTILS DE RECONNAISSANCE
-   ========================================================= */
-
-function distance(a, b) {
-
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-
-function pathLength(points) {
-
-    let total = 0;
-
-    for (let i = 1; i < points.length; i++) {
-
-        total += distance(
-            points[i - 1],
-            points[i]
-        );
-    }
-
-    return total;
-}
-
-
-function resample(points, n) {
-
-    if (points.length < 2) return points;
-
-    const totalLength = pathLength(points);
-
-    if (totalLength === 0) return points;
-
-    const interval = totalLength / (n - 1);
-
-    let D = 0;
-
-    const newPoints = [points[0]];
-
-    let previous = points[0];
-
-    let i = 1;
-
-    while (i < points.length) {
-
-        const current = points[i];
-
-        const d = distance(previous, current);
-
-        if ((D + d) >= interval) {
-
-            const ratio = (interval - D) / d;
-
-            const q = {
-                x: previous.x + ratio * (current.x - previous.x),
-                y: previous.y + ratio * (current.y - previous.y)
-            };
-
-            newPoints.push(q);
-
-            previous = q;
-
-            D = 0;
-
-        } else {
-
-            D += d;
-            previous = current;
-            i++;
+        if(X>=0&&X<W&&Y>=0&&Y<H){
+          grid[Y*W+X]=1;
         }
+      }
+    }
+  }
+
+
+  function scoreTemplate(pts){
+
+    const t=new Float32Array(W*H);
+
+    for(let i=0;i<pts.length-1;i++){
+
+      const a=pts[i];
+      const b=pts[i+1];
+      const n=24;
+
+      for(let j=0;j<=n;j++){
+
+        const q=j/n;
+
+        const x=Math.round(
+          (a[0]+(b[0]-a[0])*q)*(W-1)
+        );
+
+        const y=Math.round(
+          (a[1]+(b[1]-a[1])*q)*(H-1)
+        );
+
+        // Modèle lui aussi légèrement épaissi
+        for(let yy=-2;yy<=2;yy++){
+          for(let xx=-2;xx<=2;xx++){
+
+            const X=x+xx;
+            const Y=y+yy;
+
+            if(X>=0&&X<W&&Y>=0&&Y<H){
+              t[Y*W+X]=1;
+            }
+          }
+        }
+      }
     }
 
-    while (newPoints.length < n) {
 
-        newPoints.push(points[points.length - 1]);
+    let inter=0;
+    let union=0;
+
+    for(let i=0;i<t.length;i++){
+
+      if(grid[i]||t[i])union++;
+      if(grid[i]&&t[i])inter++;
     }
 
-    return newPoints;
-}
+    return union?inter/union:0;
+  }
 
 
-function boundingBox(points) {
-
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    for (const p of points) {
-
-        minX = Math.min(minX, p.x);
-        minY = Math.min(minY, p.y);
-
-        maxX = Math.max(maxX, p.x);
-        maxY = Math.max(maxY, p.y);
-    }
-
-    return {
-        minX,
-        minY,
-        maxX,
-        maxY,
-        width: maxX - minX,
-        height: maxY - minY
-    };
-}
-
-
-function normalize(points) {
-
-    const box = boundingBox(points);
-
-    const size = Math.max(box.width, box.height);
-
-    if (size === 0) return points;
-
-    return points.map(p => ({
-
-        x: (p.x - box.minX) / size,
-
-        y: (p.y - box.minY) / size
-
-    }));
-}
-
-
-/* =========================================================
-   SIGMA DE RÉFÉRENCE
-   ========================================================= */
-
-/*
-   Plusieurs modèles sont utilisés afin d'accepter
-   différentes façons naturelles de dessiner le Sigma.
-*/
-
-const templates = [
+  // Plusieurs formes acceptées
+  const templates=[
 
     [
-        {x:0.95,y:0.05},
-        {x:0.65,y:0.05},
-        {x:0.35,y:0.05},
-        {x:0.05,y:0.05},
-        {x:0.35,y:0.35},
-        {x:0.65,y:0.65},
-        {x:0.95,y:0.95},
-        {x:0.65,y:0.95},
-        {x:0.35,y:0.95},
-        {x:0.05,y:0.95}
+      [.05,.08],
+      [.95,.08],
+      [.50,.50],
+      [.95,.92],
+      [.05,.92]
     ],
 
     [
-        {x:0.05,y:0.05},
-        {x:0.95,y:0.05},
-        {x:0.50,y:0.50},
-        {x:0.95,y:0.95},
-        {x:0.05,y:0.95}
+      [.08,.06],
+      [.92,.06],
+      [.50,.50],
+      [.92,.94],
+      [.08,.94]
     ],
 
     [
-        {x:0.95,y:0.05},
-        {x:0.10,y:0.05},
-        {x:0.50,y:0.50},
-        {x:0.10,y:0.95},
-        {x:0.95,y:0.95}
+      [.12,.08],
+      [.88,.08],
+      [.46,.50],
+      [.88,.92],
+      [.12,.92]
+    ],
+
+    [
+      [.05,.10],
+      [.85,.10],
+      [.48,.50],
+      [.90,.90],
+      [.10,.90]
     ]
-
-];
-
-
-/* =========================================================
-   COMPARAISON
-   ========================================================= */
-
-function averageDistance(a, b) {
-
-    const n = Math.min(a.length, b.length);
-
-    if (n === 0) return Infinity;
-
-    let total = 0;
-
-    for (let i = 0; i < n; i++) {
-
-        total += distance(a[i], b[i]);
-    }
-
-    return total / n;
-}
+  ];
 
 
-function reversePoints(points) {
+  let best=0;
 
-    return [...points].reverse();
-}
+  for(const t of templates){
 
-
-function similarityToTemplate(input, template) {
-
-    const a = normalize(
-        resample(input, 64)
+    best=Math.max(
+      best,
+      scoreTemplate(t)
     );
+  }
 
-    const b = normalize(
-        resample(template, 64)
-    );
 
-    const direct = averageDistance(a, b);
+  /*
+     Vérification de la structure générale du Sigma.
 
-    const reversed = averageDistance(
-        a,
-        reversePoints(b)
-    );
+     On utilise 5 zones :
+       haut gauche
+       haut droite
+       centre
+       bas gauche
+       bas droite
 
-    return Math.min(direct, reversed);
+     On demande maintenant seulement 3 zones sur 5.
+     Cela permet davantage de liberté dans le dessin.
+  */
+
+  const regions=[
+
+    [0,.30,0,.30],
+
+    [.70,1,0,.30],
+
+    [.25,.75,.35,.65],
+
+    [0,.30,.70,1],
+
+    [.70,1,.70,1]
+  ];
+
+
+  let hits=0;
+
+  for(const [x1,x2,y1,y2] of regions){
+
+    let ok=false;
+
+    for(
+      let y=Math.floor(y1*H);
+      y<Math.ceil(y2*H);
+      y++
+    ){
+
+      for(
+        let x=Math.floor(x1*W);
+        x<Math.ceil(x2*W);
+        x++
+      ){
+
+        if(grid[y*W+x]){
+          ok=true;
+          break;
+        }
+      }
+
+      if(ok)break;
+    }
+
+    if(ok)hits++;
+  }
+
+
+  /*
+     Seuil plus permissif.
+
+     Ancien :
+       best > .25 && hits >= 4
+
+     Nouveau :
+       best > .18 && hits >= 3
+
+     Cela permet un Sigma nettement plus imparfait.
+  */
+
+  return best>.18 && hits>=3;
 }
-
-
-/* =========================================================
-   VALIDATION
-   ========================================================= */
-
-document.getElementById("validate").addEventListener("click", function() {
-
-    const message = document.getElementById("message");
-
-    if (points.length < 15) {
-
-        message.textContent =
-            "Le symbole n'est pas reconnu. Réessayez, camarade.";
-
-        document.getElementById("hymne").style.display = "none";
-
-        return;
-    }
-
-    const box = boundingBox(points);
-
-    /*
-       On évite les dessins minuscules ou presque horizontaux.
-    */
-
-    if (
-        box.width < 40 ||
-        box.height < 40
-    ) {
-
-        message.textContent =
-            "Le symbole n'est pas reconnu. Réessayez, camarade.";
-
-        document.getElementById("hymne").style.display = "none";
-
-        return;
-    }
-
-
-    let bestScore = Infinity;
-
-    for (const template of templates) {
-
-        const score = similarityToTemplate(
-            points,
-            template
-        );
-
-        bestScore = Math.min(
-            bestScore,
-            score
-        );
-    }
-
-
-    /*
-       Seuil volontairement permissif.
-
-       Plus le nombre est élevé,
-       plus la reconnaissance est tolérante.
-    */
-
-    const THRESHOLD = 0.38;
-
-
-    if (bestScore < THRESHOLD) {
-
-        message.textContent = "";
-
-        document.getElementById("hymne").style.display = "block";
-
-        document.getElementById("hymne").scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-        });
-
-    } else {
-
-        message.textContent =
-            "Le symbole n'est pas reconnu. Réessayez, camarade.";
-
-        document.getElementById("hymne").style.display = "none";
-    }
-
-});
-
+document.getElementById('check').onclick=()=>{
+  const status=document.getElementById('status');
+  if(recognizeSigma()){
+    status.className='status success';status.textContent='SIGMA RECONNU';
+    document.getElementById('gate').style.display='none';
+    const r=document.getElementById('reveal');r.style.display='block';requestAnimationFrame(()=>r.classList.add('show'));
+    window.scrollTo({top:0,behavior:'smooth'});
+  }else{
+    status.className='status fail';status.textContent='Le symbole n’est pas reconnu. Réessayez, camarade.';
+  }
+};
+new ResizeObserver(resize).observe(canvas);
+resize();
 </script>
-
 </body>
 </html>
