@@ -105,14 +105,12 @@ function end(){if(!drawing)return;drawing=false;if(current.length>2)strokes.push
 canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
 document.getElementById('clear').onclick=()=>{strokes=[];current=[];document.getElementById('status').textContent='';redraw()};
 
-// Recognition: geometric test for a hand-drawn uppercase Sigma.
-// Tolerance volontairement assez large pour accepter un dessin au doigt.
+// Recognition: tolerant geometric test for a hand-drawn uppercase Sigma.
 function recognizeSigma(){
 
   const all=strokes.flat();
 
-  // Accepte des dessins assez courts / imparfaits
-  if(all.length<12)return false;
+  if(all.length<15)return false;
 
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
 
@@ -126,27 +124,39 @@ function recognizeSigma(){
   const w=maxX-minX;
   const h=maxY-minY;
 
-  // Taille minimale beaucoup plus permissive
-  if(w<30||h<30)return false;
+  if(w<35||h<35)return false;
 
   const aspect=w/h;
 
-  // Ancien : 0.55 à 2.7
-  // Nouveau : accepte des Sigma plus larges ou plus étroits
-  if(aspect<0.40||aspect>3.5)return false;
+  // Un Sigma est généralement plus haut que large,
+  // mais on accepte une bonne marge pour un dessin au doigt.
+  if(aspect<0.55||aspect>2.2)return false;
 
 
-  // Convert to a 28x36 binary drawing
-  const W=28,H=36;
+  /*
+   * -------------------------------------------------------
+   * NORMALISATION
+   * -------------------------------------------------------
+   */
+
+  const W=40;
+  const H=48;
+
   const grid=new Float32Array(W*H);
 
   for(const p of all){
 
-    const x=Math.round((p.x-minX)/w*(W-1));
-    const y=Math.round((p.y-minY)/h*(H-1));
+    const x=Math.round(
+      (p.x-minX)/w*(W-1)
+    );
 
-    // Zone de tolérance plus large autour du trait
+    const y=Math.round(
+      (p.y-minY)/h*(H-1)
+    );
+
+    // Épaisseur de tolérance du trait
     for(let yy=-2;yy<=2;yy++){
+
       for(let xx=-2;xx<=2;xx++){
 
         const X=x+xx;
@@ -160,6 +170,156 @@ function recognizeSigma(){
   }
 
 
+  /*
+   * -------------------------------------------------------
+   * 1. STRUCTURE DU SIGMA
+   *
+   * On vérifie que le dessin occupe réellement :
+   * - une zone haute
+   * - une zone centrale
+   * - une zone basse
+   * -------------------------------------------------------
+   */
+
+  function hasInk(x1,x2,y1,y2){
+
+    for(
+      let y=Math.floor(y1*H);
+      y<Math.ceil(y2*H);
+      y++
+    ){
+
+      for(
+        let x=Math.floor(x1*W);
+        x<Math.ceil(x2*W);
+        x++
+      ){
+
+        if(grid[y*W+x])return true;
+      }
+    }
+
+    return false;
+  }
+
+
+  /*
+   * Haut gauche / haut droit
+   * Centre gauche / centre droit
+   * Bas gauche / bas droit
+   */
+
+  const topLeft=hasInk(0,.42,0,.28);
+  const topRight=hasInk(.58,1,0,.28);
+
+  const midLeft=hasInk(0,.48,.35,.65);
+  const midRight=hasInk(.52,1,.35,.65);
+
+  const bottomLeft=hasInk(0,.42,.72,1);
+  const bottomRight=hasInk(.58,1,.72,1);
+
+
+  /*
+   * Un Sigma doit avoir de l'encre dans les zones
+   * haut + milieu + bas.
+   */
+
+  const topCount=(topLeft?1:0)+(topRight?1:0);
+  const midCount=(midLeft?1:0)+(midRight?1:0);
+  const bottomCount=(bottomLeft?1:0)+(bottomRight?1:0);
+
+  if(topCount<1)return false;
+  if(midCount<1)return false;
+  if(bottomCount<1)return false;
+
+
+  /*
+   * -------------------------------------------------------
+   * 2. RECHERCHE D'UNE DIAGONALE
+   *
+   * Le Sigma doit traverser la zone centrale.
+   * On teste plusieurs diagonales possibles afin de
+   * tolérer un dessin légèrement déformé.
+   * -------------------------------------------------------
+   */
+
+  function diagonalScore(direction){
+
+    let hits=0;
+    let total=0;
+
+    for(let i=0;i<=30;i++){
+
+      const t=i/30;
+
+      let x,y;
+
+      if(direction===0){
+
+        // haut droite -> bas gauche
+        x=.82-.64*t;
+        y=.12+.76*t;
+
+      }else{
+
+        // haut gauche -> bas droite
+        x=.18+.64*t;
+        y=.12+.76*t;
+      }
+
+      const gx=Math.round(x*(W-1));
+      const gy=Math.round(y*(H-1));
+
+      let found=false;
+
+      // Large tolérance autour de la diagonale
+      for(let yy=-3;yy<=3&&!found;yy++){
+
+        for(let xx=-3;xx<=3;xx++){
+
+          const X=gx+xx;
+          const Y=gy+yy;
+
+          if(
+            X>=0&&X<W&&
+            Y>=0&&Y<H&&
+            grid[Y*W+X]
+          ){
+            found=true;
+            break;
+          }
+        }
+      }
+
+      if(found)hits++;
+
+      total++;
+    }
+
+    return hits/total;
+  }
+
+
+  const diag1=diagonalScore(0);
+  const diag2=diagonalScore(1);
+
+  const diagonal=Math.max(diag1,diag2);
+
+
+  /*
+   * Le Sigma doit avoir une diagonale perceptible.
+   * Seuil suffisamment tolérant pour le doigt.
+   */
+
+  if(diagonal<0.30)return false;
+
+
+  /*
+   * -------------------------------------------------------
+   * 3. SCORE DE RESSEMBLANCE AUX TEMPLATES
+   * -------------------------------------------------------
+   */
+
   function scoreTemplate(pts){
 
     const t=new Float32Array(W*H);
@@ -168,7 +328,8 @@ function recognizeSigma(){
 
       const a=pts[i];
       const b=pts[i+1];
-      const n=24;
+
+      const n=30;
 
       for(let j=0;j<=n;j++){
 
@@ -182,14 +343,17 @@ function recognizeSigma(){
           (a[1]+(b[1]-a[1])*q)*(H-1)
         );
 
-        // Modèle lui aussi légèrement épaissi
         for(let yy=-2;yy<=2;yy++){
+
           for(let xx=-2;xx<=2;xx++){
 
             const X=x+xx;
             const Y=y+yy;
 
-            if(X>=0&&X<W&&Y>=0&&Y<H){
+            if(
+              X>=0&&X<W&&
+              Y>=0&&Y<H
+            ){
               t[Y*W+X]=1;
             }
           }
@@ -211,39 +375,30 @@ function recognizeSigma(){
   }
 
 
-  // Plusieurs formes acceptées
   const templates=[
 
     [
-      [.05,.08],
-      [.95,.08],
+      [.08,.08],
+      [.92,.08],
       [.50,.50],
-      [.95,.92],
-      [.05,.92]
+      [.92,.92],
+      [.08,.92]
     ],
 
     [
-      [.08,.06],
-      [.92,.06],
+      [.10,.10],
+      [.90,.10],
       [.50,.50],
-      [.92,.94],
-      [.08,.94]
-    ],
-
-    [
-      [.12,.08],
-      [.88,.08],
-      [.46,.50],
-      [.88,.92],
-      [.12,.92]
-    ],
-
-    [
-      [.05,.10],
-      [.85,.10],
-      [.48,.50],
       [.90,.90],
       [.10,.90]
+    ],
+
+    [
+      [.15,.08],
+      [.88,.08],
+      [.48,.50],
+      [.88,.92],
+      [.12,.92]
     ]
   ];
 
@@ -260,77 +415,20 @@ function recognizeSigma(){
 
 
   /*
-     Vérification de la structure générale du Sigma.
+   * -------------------------------------------------------
+   * VALIDATION FINALE
+   * -------------------------------------------------------
+   *
+   * Il faut :
+   * - une structure haut/milieu/bas
+   * - une vraie diagonale
+   * - une ressemblance minimale
+   */
 
-     On utilise 5 zones :
-       haut gauche
-       haut droite
-       centre
-       bas gauche
-       bas droite
-
-     On demande maintenant seulement 3 zones sur 5.
-     Cela permet davantage de liberté dans le dessin.
-  */
-
-  const regions=[
-
-    [0,.30,0,.30],
-
-    [.70,1,0,.30],
-
-    [.25,.75,.35,.65],
-
-    [0,.30,.70,1],
-
-    [.70,1,.70,1]
-  ];
-
-
-  let hits=0;
-
-  for(const [x1,x2,y1,y2] of regions){
-
-    let ok=false;
-
-    for(
-      let y=Math.floor(y1*H);
-      y<Math.ceil(y2*H);
-      y++
-    ){
-
-      for(
-        let x=Math.floor(x1*W);
-        x<Math.ceil(x2*W);
-        x++
-      ){
-
-        if(grid[y*W+x]){
-          ok=true;
-          break;
-        }
-      }
-
-      if(ok)break;
-    }
-
-    if(ok)hits++;
-  }
-
-
-  /*
-     Seuil plus permissif.
-
-     Ancien :
-       best > .25 && hits >= 4
-
-     Nouveau :
-       best > .18 && hits >= 3
-
-     Cela permet un Sigma nettement plus imparfait.
-  */
-
-  return best>.18 && hits>=3;
+  return (
+    best>.22 &&
+    diagonal>.30
+  );
 }
 document.getElementById('check').onclick=()=>{
   const status=document.getElementById('status');
