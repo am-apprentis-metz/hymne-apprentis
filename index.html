@@ -107,11 +107,12 @@ document.getElementById('clear').onclick=()=>{strokes=[];current=[];document.get
 
 // Recognition: tolerant geometric test for a hand-drawn uppercase Sigma.
 function recognizeSigma(){
-
   const all=strokes.flat();
+  if(all.length<25)return false;
 
-  if(all.length<15)return false;
-
+  // =========================================================
+  // 1. BOUNDING BOX
+  // =========================================================
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
 
   for(const p of all){
@@ -124,39 +125,51 @@ function recognizeSigma(){
   const w=maxX-minX;
   const h=maxY-minY;
 
-  if(w<35||h<35)return false;
+  if(w<55||h<55)return false;
 
   const aspect=w/h;
 
-  // Un Sigma est généralement plus haut que large,
-  // mais on accepte une bonne marge pour un dessin au doigt.
-  if(aspect<0.55||aspect>2.2)return false;
+  // Un Sigma majuscule est généralement plus large que haut,
+  // mais on laisse une bonne tolérance pour le dessin au doigt.
+  if(aspect<0.65||aspect>2.1)return false;
 
+  // Normalisation 0 → 1
+  const pts=all.map(p=>({
+    x:(p.x-minX)/w,
+    y:(p.y-minY)/h
+  }));
 
-  /*
-   * -------------------------------------------------------
-   * NORMALISATION
-   * -------------------------------------------------------
-   */
+  // =========================================================
+  // 2. REJET DES FORMES FERMÉES
+  //    Rond, carré, boucle, sigma minuscule arrondi...
+  // =========================================================
+  for(const s of strokes){
 
-  const W=40;
-  const H=48;
+    if(s.length<10)continue;
 
-  const grid=new Float32Array(W*H);
+    const a=s[0];
+    const b=s[s.length-1];
 
-  for(const p of all){
+    const d=Math.hypot(b.x-a.x,b.y-a.y);
 
-    const x=Math.round(
-      (p.x-minX)/w*(W-1)
-    );
+    if(d/w<0.13){
+      return false;
+    }
+  }
 
-    const y=Math.round(
-      (p.y-minY)/h*(H-1)
-    );
+  // =========================================================
+  // 3. GRILLE DU DESSIN
+  // =========================================================
+  const W=60;
+  const H=60;
+  const grid=new Uint8Array(W*H);
 
-    // Épaisseur de tolérance du trait
+  for(const p of pts){
+
+    const x=Math.round(p.x*(W-1));
+    const y=Math.round(p.y*(H-1));
+
     for(let yy=-2;yy<=2;yy++){
-
       for(let xx=-2;xx<=2;xx++){
 
         const X=x+xx;
@@ -169,266 +182,218 @@ function recognizeSigma(){
     }
   }
 
+  // =========================================================
+  // OUTILS
+  // =========================================================
 
-  /*
-   * -------------------------------------------------------
-   * 1. STRUCTURE DU SIGMA
-   *
-   * On vérifie que le dessin occupe réellement :
-   * - une zone haute
-   * - une zone centrale
-   * - une zone basse
-   * -------------------------------------------------------
-   */
+  function ink(x,y,r=2){
 
-  function hasInk(x1,x2,y1,y2){
+    const cx=Math.round(x*(W-1));
+    const cy=Math.round(y*(H-1));
 
-    for(
-      let y=Math.floor(y1*H);
-      y<Math.ceil(y2*H);
-      y++
-    ){
+    for(let yy=-r;yy<=r;yy++){
+      for(let xx=-r;xx<=r;xx++){
 
-      for(
-        let x=Math.floor(x1*W);
-        x<Math.ceil(x2*W);
-        x++
-      ){
+        const X=cx+xx;
+        const Y=cy+yy;
 
-        if(grid[y*W+x])return true;
+        if(X>=0&&X<W&&Y>=0&&Y<H&&grid[Y*W+X]){
+          return true;
+        }
       }
     }
 
     return false;
   }
 
+  function lineScore(x1,y1,x2,y2){
 
-  /*
-   * Haut gauche / haut droit
-   * Centre gauche / centre droit
-   * Bas gauche / bas droit
-   */
+    let hit=0;
+    const steps=80;
 
-  const topLeft=hasInk(0,.42,0,.28);
-  const topRight=hasInk(.58,1,0,.28);
+    for(let i=0;i<=steps;i++){
 
-  const midLeft=hasInk(0,.48,.35,.65);
-  const midRight=hasInk(.52,1,.35,.65);
+      const t=i/steps;
 
-  const bottomLeft=hasInk(0,.42,.72,1);
-  const bottomRight=hasInk(.58,1,.72,1);
+      const x=x1+(x2-x1)*t;
+      const y=y1+(y2-y1)*t;
 
+      if(ink(x,y,3)){
+        hit++;
+      }
+    }
 
-  /*
-   * Un Sigma doit avoir de l'encre dans les zones
-   * haut + milieu + bas.
-   */
+    return hit/(steps+1);
+  }
 
-  const topCount=(topLeft?1:0)+(topRight?1:0);
-  const midCount=(midLeft?1:0)+(midRight?1:0);
-  const bottomCount=(bottomLeft?1:0)+(bottomRight?1:0);
+  function horizontalScore(y){
 
-  if(topCount<1)return false;
-  if(midCount<1)return false;
-  if(bottomCount<1)return false;
+    let hit=0;
+    const steps=70;
 
+    for(let i=0;i<=steps;i++){
 
-  /*
-   * -------------------------------------------------------
-   * 2. RECHERCHE D'UNE DIAGONALE
-   *
-   * Le Sigma doit traverser la zone centrale.
-   * On teste plusieurs diagonales possibles afin de
-   * tolérer un dessin légèrement déformé.
-   * -------------------------------------------------------
-   */
+      const x=i/steps;
 
-  function diagonalScore(direction){
+      if(ink(x,y,3)){
+        hit++;
+      }
+    }
 
-    let hits=0;
+    return hit/(steps+1);
+  }
+
+  function density(x1,x2,y1,y2){
+
     let total=0;
+    let hit=0;
 
-    for(let i=0;i<=30;i++){
+    const xa=Math.floor(x1*W);
+    const xb=Math.ceil(x2*W);
+    const ya=Math.floor(y1*H);
+    const yb=Math.ceil(y2*H);
 
-      const t=i/30;
+    for(let y=ya;y<yb;y++){
+      for(let x=xa;x<xb;x++){
 
-      let x,y;
+        total++;
 
-      if(direction===0){
-
-        // haut droite -> bas gauche
-        x=.82-.64*t;
-        y=.12+.76*t;
-
-      }else{
-
-        // haut gauche -> bas droite
-        x=.18+.64*t;
-        y=.12+.76*t;
-      }
-
-      const gx=Math.round(x*(W-1));
-      const gy=Math.round(y*(H-1));
-
-      let found=false;
-
-      // Large tolérance autour de la diagonale
-      for(let yy=-3;yy<=3&&!found;yy++){
-
-        for(let xx=-3;xx<=3;xx++){
-
-          const X=gx+xx;
-          const Y=gy+yy;
-
-          if(
-            X>=0&&X<W&&
-            Y>=0&&Y<H&&
-            grid[Y*W+X]
-          ){
-            found=true;
-            break;
-          }
-        }
-      }
-
-      if(found)hits++;
-
-      total++;
-    }
-
-    return hits/total;
-  }
-
-
-  const diag1=diagonalScore(0);
-  const diag2=diagonalScore(1);
-
-  const diagonal=Math.max(diag1,diag2);
-
-
-  /*
-   * Le Sigma doit avoir une diagonale perceptible.
-   * Seuil suffisamment tolérant pour le doigt.
-   */
-
-  if(diagonal<0.30)return false;
-
-
-  /*
-   * -------------------------------------------------------
-   * 3. SCORE DE RESSEMBLANCE AUX TEMPLATES
-   * -------------------------------------------------------
-   */
-
-  function scoreTemplate(pts){
-
-    const t=new Float32Array(W*H);
-
-    for(let i=0;i<pts.length-1;i++){
-
-      const a=pts[i];
-      const b=pts[i+1];
-
-      const n=30;
-
-      for(let j=0;j<=n;j++){
-
-        const q=j/n;
-
-        const x=Math.round(
-          (a[0]+(b[0]-a[0])*q)*(W-1)
-        );
-
-        const y=Math.round(
-          (a[1]+(b[1]-a[1])*q)*(H-1)
-        );
-
-        for(let yy=-2;yy<=2;yy++){
-
-          for(let xx=-2;xx<=2;xx++){
-
-            const X=x+xx;
-            const Y=y+yy;
-
-            if(
-              X>=0&&X<W&&
-              Y>=0&&Y<H
-            ){
-              t[Y*W+X]=1;
-            }
-          }
+        if(grid[y*W+x]){
+          hit++;
         }
       }
     }
 
-
-    let inter=0;
-    let union=0;
-
-    for(let i=0;i<t.length;i++){
-
-      if(grid[i]||t[i])union++;
-      if(grid[i]&&t[i])inter++;
-    }
-
-    return union?inter/union:0;
+    return total?hit/total:0;
   }
 
+  // =========================================================
+  // 4. LE Σ DOIT AVOIR 4 EXTRÉMITÉS
+  //
+  //       ─────────
+  //              \
+  //               \
+  //               /
+  //              /
+  //       ─────────
+  // =========================================================
 
-  const templates=[
+  const TL=density(0,.32,0,.20);
+  const TR=density(.68,1,0,.20);
 
-    [
-      [.08,.08],
-      [.92,.08],
-      [.50,.50],
-      [.92,.92],
-      [.08,.92]
-    ],
+  const BL=density(0,.32,.80,1);
+  const BR=density(.68,1,.80,1);
 
-    [
-      [.10,.10],
-      [.90,.10],
-      [.50,.50],
-      [.90,.90],
-      [.10,.90]
-    ],
+  if(TL<.025||TR<.025||BL<.025||BR<.025){
+    return false;
+  }
 
-    [
-      [.15,.08],
-      [.88,.08],
-      [.48,.50],
-      [.88,.92],
-      [.12,.92]
-    ]
-  ];
+  // =========================================================
+  // 5. LES DEUX LIGNES HORIZONTALES
+  // =========================================================
 
+  const top=horizontalScore(.10);
+  const bottom=horizontalScore(.90);
 
-  let best=0;
+  // Le haut et le bas doivent réellement traverser
+  // une grande partie de la largeur.
+  if(top<.32)return false;
+  if(bottom<.32)return false;
 
-  for(const t of templates){
+  // =========================================================
+  // 6. LE CENTRE DU Σ
+  // =========================================================
 
-    best=Math.max(
-      best,
-      scoreTemplate(t)
+  if(density(.35,.65,.38,.62)<.015){
+    return false;
+  }
+
+  // =========================================================
+  // 7. LES DEUX DIAGONALES
+  //
+  // On teste plusieurs variantes afin d'accepter un Σ
+  // dessiné de manière irrégulière.
+  // =========================================================
+
+  const diagonalA =
+    (lineScore(.88,.12,.50,.50) +
+     lineScore(.50,.50,.12,.88))/2;
+
+  const diagonalB =
+    (lineScore(.12,.12,.50,.50) +
+     lineScore(.50,.50,.88,.88))/2;
+
+  const diagonal=Math.max(diagonalA,diagonalB);
+
+  if(diagonal<.30){
+    return false;
+  }
+
+  // =========================================================
+  // 8. IMPORTANT :
+  //    LE MILIEU GAUCHE ET LE MILIEU DROIT
+  //    DOIVENT RESTER relativement VIDES.
+  //
+  // Cela élimine notamment les ronds, ovales et σ.
+  // =========================================================
+
+  const leftMiddle=density(0,.28,.25,.75);
+  const rightMiddle=density(.72,1,.25,.75);
+
+  if(leftMiddle>.18||rightMiddle>.18){
+    return false;
+  }
+
+  // =========================================================
+  // 9. LE Σ NE DOIT PAS ÊTRE UNE FORME ARRONDIE
+  //
+  // On vérifie qu'il existe bien un changement de direction
+  // autour du centre.
+  // =========================================================
+
+  const upperDiagonal =
+    Math.max(
+      lineScore(.85,.12,.50,.50),
+      lineScore(.15,.12,.50,.50)
     );
+
+  const lowerDiagonal =
+    Math.max(
+      lineScore(.50,.50,.15,.88),
+      lineScore(.50,.50,.85,.88)
+    );
+
+  if(upperDiagonal<.28||lowerDiagonal<.28){
+    return false;
   }
 
+  // =========================================================
+  // 10. REJET DES SIGMAS MINUSCULES ARRONDIS
+  //
+  // Un σ possède généralement beaucoup d'encre dans la
+  // partie centrale basse et sur les côtés.
+  // =========================================================
 
-  /*
-   * -------------------------------------------------------
-   * VALIDATION FINALE
-   * -------------------------------------------------------
-   *
-   * Il faut :
-   * - une structure haut/milieu/bas
-   * - une vraie diagonale
-   * - une ressemblance minimale
-   */
+  const centralLower=density(.25,.75,.55,.85);
 
-  return (
-    best>.22 &&
-    diagonal>.30
-  );
+  const centralUpper=density(.25,.75,.15,.45);
+
+  if(centralLower>.32&&centralUpper>.32){
+    return false;
+  }
+
+  // =========================================================
+  // 11. SCORE FINAL
+  // =========================================================
+
+  const score =
+      top*0.25 +
+      bottom*0.25 +
+      diagonal*0.30 +
+      upperDiagonal*0.10 +
+      lowerDiagonal*0.10;
+
+  return score>=0.42;
 }
 document.getElementById('check').onclick=()=>{
   const status=document.getElementById('status');
