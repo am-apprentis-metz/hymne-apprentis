@@ -301,6 +301,50 @@ function recognizeSigma(){
   if(bottom<.32)return false;
 
   // =========================================================
+// 5 BIS. REJET DES CROIX "X"
+// =========================================================
+
+function horizontalCoverage(y){
+
+  const zones=[
+    [0,.30],
+    [.35,.65],
+    [.70,1]
+  ];
+
+  let count=0;
+
+  for(const [x1,x2] of zones){
+
+    let hit=0;
+    const steps=30;
+
+    for(let i=0;i<=steps;i++){
+
+      const t=i/steps;
+      const x=x1+(x2-x1)*t;
+
+      if(ink(x,y,3)){
+        hit++;
+      }
+    }
+
+    if(hit/(steps+1)>.18){
+      count++;
+    }
+  }
+
+  return count;
+}
+
+const topCoverage=horizontalCoverage(.10);
+const bottomCoverage=horizontalCoverage(.90);
+
+if(topCoverage<3||bottomCoverage<3){
+  return false;
+}
+  
+  // =========================================================
   // 6. LE CENTRE DU Σ
   // =========================================================
 
