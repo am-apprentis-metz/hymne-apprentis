@@ -297,8 +297,8 @@ function recognizeSigma(){
 
   // Le haut et le bas doivent réellement traverser
   // une grande partie de la largeur.
-  if(top<.32)return false;
-  if(bottom<.32)return false;
+  if(top<.27)return false;
+  if(bottom<.27)return false;
 
   // =========================================================
 // 5 BIS. REJET DES CROIX "X"
@@ -369,9 +369,9 @@ if(topCoverage<3||bottomCoverage<3){
 
   const diagonal=Math.max(diagonalA,diagonalB);
 
-  if(diagonal<.30){
-    return false;
-  }
+  if(diagonal<.26){
+   return false;
+ }
 
   // =========================================================
   // 8. IMPORTANT :
@@ -408,8 +408,8 @@ if(topCoverage<3||bottomCoverage<3){
     );
 
   if(upperDiagonal<.28||lowerDiagonal<.28){
-    return false;
-  }
+  return false;
+ }
 
   // =========================================================
   // 10. REJET DES SIGMAS MINUSCULES ARRONDIS
@@ -437,7 +437,7 @@ if(topCoverage<3||bottomCoverage<3){
       upperDiagonal*0.10 +
       lowerDiagonal*0.10;
 
-  return score>=0.42;
+  return score>=0.37;
 }
 document.getElementById('check').onclick=()=>{
   const status=document.getElementById('status');
